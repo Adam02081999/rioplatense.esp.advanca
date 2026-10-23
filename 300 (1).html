@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿根廷西班牙語 (Rioplatense Spanish) 語句播放器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .active-phrase {
+            border-left: 4px solid #0284c7;
+            background-color: #f0f9ff;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-sky-600 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🇦🇷</span>
+                <div>
+                    <h1 class="text-xl font-bold">Rioplatense Spanish 語句播放器</h1>
+                    <p class="text-xs text-sky-100">阿根廷 / 烏拉圭西語 · Vos 語法與在地口語 (601–1000)</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-sky-700 p-2 rounded-lg text-sm w-full md:w-auto">
+                <i class="fas me-1 fa-headset text-sky-200"></i>
+                <label for="voiceSelect" class="whitespace-nowrap font-medium">語音員:</label>
+                <select id="voiceSelect" class="bg-sky-800 text-white border border-sky-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-300 w-full md:w-64">
+                    <option value="">載入中...</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full flex flex-col md:flex-row gap-6">
+
+        <!-- Left Sidebar: Controls & Category Filter -->
+        <aside class="w-full md:w-80 flex flex-col gap-4 flex-shrink-0">
+            
+            <!-- Player Status Card -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">播放控制台</h2>
+                
+                <div class="space-y-4">
+                    <!-- Current Playing Display -->
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <span class="text-xs text-sky-600 font-medium block mb-1" id="currentCategory">準備播放</span>
+                        <p class="text-sm font-semibold text-slate-800 truncate" id="currentEs">請選擇語句或點擊播放</p>
+                        <p class="text-xs text-slate-500 truncate mt-0.5" id="currentEn">Select a phrase to play</p>
+                    </div>
+
+                    <!-- Play Control Buttons -->
+                    <div class="flex items-center justify-center gap-3">
+                        <button id="prevBtn" class="p-3 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 transition" title="上一句">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="playPauseBtn" class="p-4 bg-sky-600 text-white rounded-full hover:bg-sky-700 transition shadow-md w-12 h-12 flex items-center justify-center" title="播放 / 暫停">
+                            <i class="fas fa-play text-lg" id="playIcon"></i>
+                        </button>
+                        <button id="nextBtn" class="p-3 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 transition" title="下一句">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="space-y-3 pt-2 border-t border-slate-100 text-xs">
+                        <!-- Speed -->
+                        <div>
+                            <div class="flex justify-between mb-1 text-slate-600">
+                                <span>語速</span>
+                                <span id="rateValue" class="font-semibold text-sky-600">0.9x</span>
+                            </div>
+                            <input type="range" id="rateInput" min="0.5" max="1.5" step="0.1" value="0.9" class="w-full accent-sky-600">
+                        </div>
+
+                        <!-- Auto Play Switch -->
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-slate-600 font-medium">連續播放模式</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="autoPlayToggle" checked class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-600"></div>
+                            </label>
+                        </div>
+
+                        <!-- Read English Switch -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-600 font-medium">朗讀英文翻譯</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="readEnToggle" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col">
+                <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">分類單元</h2>
+                <div class="space-y-1 overflow-y-auto max-h-60 md:max-h-80 custom-scrollbar pr-1" id="categoryList">
+                    <!-- Category buttons populated by JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Content Area: Phrase List -->
+        <section class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+            
+            <!-- Search & Filter Header -->
+            <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="relative w-full sm:w-72">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" placeholder="搜尋西語、英文或備註..." class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div class="text-xs text-slate-500 w-full sm:w-auto text-right">
+                    共 <span id="countDisplay" class="font-bold text-sky-600">0</span> 句
+                </div>
+            </div>
+
+            <!-- Phrases List -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3" id="phraseList">
+                <!-- Phrase Cards populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Raw Data Embed & Logic Script -->
+    <script>
+        const rawTextData = `
+── Salud y cuerpo ────────────────────────────────────────────
+
+601. Me agarró un dolor de cabeza que no se me va con nada.
+   I got a headache that won't go away with anything.
+   » agarrar = to catch/come down with
+602. Estoy medio resfriado, creo que me agarré algo.
+   I'm a bit under the weather, I think I caught something.
+603. ¿Sabés si hay una farmacia de turno por acá cerca?
+   Do you know if there's an on-duty pharmacy near here?
+   » farmacia de turno = the one open outside hours
+604. Necesito sacar turno con un médico, ¿cómo se hace?
+   I need to book a doctor's appointment, how does it work?
+   » sacar turno = to get an appointment
+605. Me duele la espalda de estar tantas horas sentado.
+   My back hurts from sitting so many hours.
+606. Dormí pésimo, me desperté como cinco veces.
+   I slept terribly, I woke up about five times.
+607. Hace una semana que vengo durmiendo mal.
+   I've been sleeping badly for a week.
+   » hace + time + que + present = ongoing
+608. ¿Esto se vende sin receta o necesito una?
+   Is this sold over the counter or do I need a prescription?
+609. Me hice unos estudios y salió todo bien.
+   I had some tests done and everything came back fine.
+610. Tendría que moverme más, paro todo el día quieto.
+   I should move more, I'm sitting still all day.
+611. Me siento mucho mejor que la semana pasada.
+   I feel much better than last week.
+612. Tomá mucha agua y descansá, eso es lo principal.
+   Drink lots of water and rest, that's the main thing.
+613. Si no se te pasa en dos días, andá al médico.
+   If it doesn't go away in two days, go to the doctor.
+614. Estoy cansadísimo, necesito unos días de descanso.
+   I'm exhausted, I need a few days off.
+615. Se me durmió la pierna de estar en esa posición.
+   My leg fell asleep from being in that position.
+616. No es nada grave, por suerte.
+   It's nothing serious, luckily.
+617. Mejorate pronto, cualquier cosa avisame.
+   Get well soon, let me know if anything.
+618. Me caí mal y me lastimé el tobillo.
+   I landed badly and hurt my ankle.
+619. Vengo arrastrando un dolor desde hace rato.
+   I've been dragging a pain around for a while.
+620. Ya estoy al cien, se me pasó todo.
+   I'm at a hundred percent, it's all gone.
+
+── Clima y estaciones ────────────────────────────────────────
+
+621. Está haciendo un calor insoportable, no se puede ni salir.
+   It's unbearably hot, you can't even go out.
+622. Parece que va a llover, el cielo está muy cargado.
+   Looks like it's going to rain, the sky is really heavy.
+623. Llevate un paraguas por las dudas.
+   Take an umbrella just in case.
+624. Se largó a llover justo cuando salí.
+   It started pouring right when I left.
+   » largarse a = to suddenly start
+625. Hoy refrescó bastante comparado con ayer.
+   Today it cooled down quite a bit compared to yesterday.
+626. Está fresquito, es un clima bárbaro para caminar.
+   It's nice and cool, great weather for walking.
+627. En invierno acá se hace de noche tempranísimo.
+   In winter it gets dark really early here.
+628. El verano es húmedo y se hace bastante pesado.
+   Summer is humid and gets pretty heavy.
+629. No sabés cómo está el viento hoy.
+   You've no idea how windy it is today.
+   » no sabés cómo = emphatic intro
+630. Tuvimos tres días seguidos de lluvia.
+   We had three straight days of rain.
+631. Aprovechemos que está lindo antes de que cambie.
+   Let's take advantage while it's nice before it changes.
+632. El pronóstico dice que mejora para el fin de semana.
+   The forecast says it improves for the weekend.
+633. Hacía años que no veía una tormenta así.
+   I hadn't seen a storm like that in years.
+634. Estoy muerto de frío, no traje abrigo.
+   I'm freezing, I didn't bring a coat.
+635. Con este sol hay que ponerse protector.
+   With this sun you've got to put on sunscreen.
+636. A la tarde suele levantarse viento.
+   In the afternoon the wind usually picks up.
+   » soler = to usually do
+637. Recién salió el sol después de toda la semana gris.
+   The sun's only just come out after a whole grey week.
+638. La primavera acá es la mejor época del año.
+   Spring here is the best time of year.
+639. Cambió el clima de un momento para el otro.
+   The weather changed from one moment to the next.
+640. Qué día espectacular, aprovechémoslo.
+   What a spectacular day, let's make the most of it.
+
+── Tecnología y celular ──────────────────────────────────────
+
+641. Se me está por acabar la batería, te llamo después.
+   My battery's about to die, I'll call you later.
+   » estar por = about to
+642. ¿Me pasás tu número así te agendo?
+   Can you give me your number so I can save you?
+   » agendar = to save a contact
+643. No me llegó tu mensaje, mandámelo de nuevo.
+   Your message didn't reach me, send it again.
+644. Se me colgó el celular justo cuando lo necesitaba.
+   My phone froze right when I needed it.
+   » colgarse = to freeze/crash
+645. Estoy sin datos, ¿tenés la clave del wifi?
+   I'm out of data, do you have the wifi password?
+646. Mandámelo por audio que es más rápido.
+   Send it as a voice note, it's faster.
+647. Te escribo por WhatsApp así queda todo junto.
+   I'll write you on WhatsApp so it's all in one place.
+648. No me funciona el link que me pasaste.
+   The link you sent me doesn't work.
+649. Se me borró todo y no tenía copia de seguridad.
+   Everything got deleted and I didn't have a backup.
+650. Estoy probando una aplicación nueva para estudiar.
+   I'm trying out a new app for studying.
+651. Odio cuando se corta la videollamada en la mejor parte.
+   I hate when the video call drops at the best part.
+652. Pasame el archivo por mail que por acá no me entra.
+   Send me the file by email, it won't come through here.
+653. ¿Me ayudás con esto? No entiendo nada de tecnología.
+   Can you help me with this? I don't understand tech at all.
+654. Se actualizó solo y ahora está todo distinto.
+   It updated by itself and now everything is different.
+655. Te mando captura así ves de qué hablo.
+   I'll send a screenshot so you see what I mean.
+656. Estoy con la compu desde la mañana.
+   I've been on the computer since the morning.
+   » compu = computer
+657. No me entra más nada en el celular.
+   Nothing more fits on my phone.
+658. Lo guardo en la nube así no lo pierdo.
+   I'll save it to the cloud so I don't lose it.
+659. Después te lo reenvío cuando llegue a casa.
+   I'll forward it to you when I get home.
+660. Dejame que lo busco y te confirmo.
+   Let me look it up and I'll confirm.
+
+── Estudiar el idioma ────────────────────────────────────────
+
+661. Estoy aprendiendo castellano pero me cuesta el voseo.
+   I'm learning Spanish but I struggle with voseo.
+   » castellano is what Argentines call their language
+662. Entiendo bastante, pero me trabo cuando tengo que hablar.
+   I understand quite a bit, but I get stuck when I have to speak.
+   » trabarse = to get tongue-tied
+663. ¿Me corregís si digo algo mal? Me sirve un montón.
+   Will you correct me if I say something wrong? It helps me loads.
+664. Hablá tranquilo, si no entiendo te pregunto.
+   Speak normally, if I don't understand I'll ask.
+665. ¿Cómo se dice esto en castellano?
+   How do you say this in Spanish?
+666. ¿Qué significa esa palabra? Nunca la escuché.
+   What does that word mean? I've never heard it.
+667. ¿Eso se usa acá o es más de otro país?
+   Is that used here or is it more from another country?
+668. Me confundo entre lo que aprendí en el libro y cómo hablan acá.
+   I get confused between what I learned in the book and how people speak here.
+669. De a poco le voy agarrando el oído.
+   Little by little I'm getting my ear in.
+670. Lo que más me cuesta es cuando hablan rápido entre ellos.
+   What's hardest is when they talk fast among themselves.
+671. Prefiero equivocarme hablando que quedarme callado.
+   I'd rather make mistakes speaking than stay quiet.
+672. Aprendí más en un mes acá que en un año de clases.
+   I learned more in a month here than in a year of classes.
+673. ¿Me lo podés repetir más despacio, por favor?
+   Can you repeat it more slowly, please?
+674. Anoto todas las palabras nuevas que escucho.
+   I write down every new word I hear.
+675. ¿Esto suena natural o es muy de libro?
+   Does this sound natural or is it too textbook?
+676. Estoy escuchando podcasts para acostumbrar el oído.
+   I'm listening to podcasts to train my ear.
+677. Me di cuenta de que acá no usan el "tú" nunca.
+   I realised they never use "tú" here.
+678. Quiero llegar a poder hacer una entrevista en castellano.
+   I want to get to the point of doing an interview in Spanish.
+679. Ya me sale sin pensarlo tanto.
+   It comes out now without me thinking about it so much.
+   » salir = to come out naturally
+680. Gracias por la paciencia, sé que hablo lento.
+   Thanks for your patience, I know I speak slowly.
+
+── Plata, banco y trámites ───────────────────────────────────
+
+681. ¿Dónde me conviene cambiar plata?
+   Where's the best place for me to change money?
+682. ¿Me aceptás transferencia o preferís efectivo?
+   Do you take a transfer or do you prefer cash?
+683. Te paso los datos para que me transfieras.
+   I'll send you the details so you can transfer me.
+684. No me entra la tarjeta extranjera en este cajero.
+   My foreign card doesn't work in this ATM.
+685. Me cobraron una comisión altísima.
+   They charged me a really high fee.
+686. ¿Hay un límite para sacar por día?
+   Is there a daily withdrawal limit?
+687. Prefiero pagar en efectivo porque sale más barato.
+   I'd rather pay cash because it comes out cheaper.
+688. Necesito una factura para poder rendirlo.
+   I need an invoice so I can expense it.
+689. ¿Me podés hacer un recibo simple?
+   Can you write me a simple receipt?
+690. Los precios cambian todo el tiempo acá.
+   Prices change all the time here.
+691. Me salió bastante más caro de lo que pensaba.
+   It came out a lot more expensive than I thought.
+692. Estoy tratando de no gastar de más este mes.
+   I'm trying not to overspend this month.
+693. Me quedé corto con la plata que traje.
+   I came up short with the money I brought.
+694. Vale la pena esperar a que baje un poco.
+   It's worth waiting for it to come down a bit.
+695. ¿Te puedo pagar la mitad ahora y la mitad después?
+   Can I pay you half now and half later?
+696. Ya te deposité, fijate si te llegó.
+   I already transferred you, check if it arrived.
+697. Quedamos a mano entonces.
+   We're even then.
+   » quedar a mano = to be square
+698. Te debo una, después arreglamos.
+   I owe you one, we'll settle up later.
+699. Anotá lo que vayas gastando así no perdemos la cuenta.
+   Note down what you spend so we don't lose track.
+700. Al final salió más barato de lo que esperábamos.
+   In the end it was cheaper than we expected.
+
+── Negociar y acordar ────────────────────────────────────────
+
+701. Contame qué tenías pensado y vemos si nos arreglamos.
+   Tell me what you had in mind and we'll see if we can work it out.
+702. Ese precio se me va un poco de presupuesto.
+   That price goes a bit beyond my budget.
+703. ¿Habría alguna posibilidad de mejorarlo un poco?
+   Would there be any chance of improving it a bit?
+704. Si lo tomamos por varios meses, ¿cambia el precio?
+   If we take it for several months, does the price change?
+705. Yo te propongo algo intermedio y vemos qué te parece.
+   I'll propose something in between and we'll see what you think.
+706. Dejame consultarlo y mañana te confirmo.
+   Let me check on it and I'll confirm tomorrow.
+707. Me interesa, pero necesito pensarlo un poco.
+   I'm interested, but I need to think it over a bit.
+708. Si cerramos hoy, ¿me hacés algún descuento?
+   If we close today, will you give me a discount?
+709. Prefiero que quede todo claro desde el principio.
+   I'd rather everything be clear from the start.
+710. Lo que me importa más que el precio es el plazo.
+   What matters to me more than the price is the timeline.
+711. ¿Qué incluye exactamente? Para no llevarme sorpresas.
+   What exactly does it include? So I don't get surprises.
+712. Me parece justo para los dos.
+   It seems fair for both of us.
+713. Pongámoslo por escrito así no hay confusiones.
+   Let's put it in writing so there's no confusion.
+714. Por mí está bien, cerramos así.
+   It's fine by me, let's close it like that.
+715. Dame unos días y te doy una respuesta definitiva.
+   Give me a few days and I'll give you a final answer.
+716. Entiendo tu posición, pero yo tampoco puedo bajar más.
+   I understand your position, but I can't go lower either.
+717. Busquemos la manera de que a los dos nos sirva.
+   Let's find a way that works for both of us.
+718. Si te surge algo mejor, avisame sin problema.
+   If something better comes up for you, just tell me.
+719. Quedamos así entonces, muchas gracias.
+   We'll leave it at that then, thank you very much.
+720. Trato hecho.
+   It's a deal.
+
+── Describir personas ────────────────────────────────────────
+
+721. Es un tipo muy simple, no se la cree para nada.
+   He's a very down-to-earth guy, he's not full of himself at all.
+   » creérsela = to be full of yourself
+722. Tiene una paciencia que yo no tendría nunca.
+   He has a patience I'd never have.
+723. Es medio callado, pero cuando habla dice cosas interesantes.
+   He's a bit quiet, but when he speaks he says interesting things.
+724. Al principio parece serio, después te das cuenta de que es un fenómeno.
+   At first he seems serious, then you realise he's a great guy.
+   » un fenómeno = a gem of a person
+725. Tiene mucha calle, se mueve bien en cualquier lado.
+   He's very street-smart, he handles himself anywhere.
+   » tener calle = street smarts
+726. Es de esas personas que te escuchan de verdad.
+   He's one of those people who really listen to you.
+727. Me cae bárbaro, siempre está de buen humor.
+   I really like him, he's always in a good mood.
+728. Es muy laburador, no para nunca.
+   He's a real hard worker, he never stops.
+729. Habla hasta por los codos.
+   He talks nonstop.
+730. Tiene un carácter fuerte pero buen corazón.
+   He has a strong personality but a good heart.
+731. Es muy generoso con su tiempo.
+   He's very generous with his time.
+732. Nunca te queda mal, siempre cumple.
+   He never lets you down, he always delivers.
+733. Es bastante reservado con sus cosas.
+   He's fairly private about his own stuff.
+734. Le encanta hablar de fútbol, no se cansa nunca.
+   He loves talking football, he never gets tired of it.
+735. Es un capo en lo suyo.
+   He's a master at what he does.
+   » capo = top guy, expert
+736. Tiene una memoria impresionante para los nombres.
+   He has an impressive memory for names.
+737. Es muy exigente, pero con él aprendés un montón.
+   He's very demanding, but you learn a lot with him.
+738. No se hace problema por nada.
+   Nothing fazes him.
+739. Siempre te saca una sonrisa.
+   He always gets a smile out of you.
+740. Es alguien que vale la pena conocer.
+   He's someone worth getting to know.
+
+── Describir lugares y cosas ─────────────────────────────────
+
+741. Es un lugar chiquito pero con mucha onda.
+   It's a small place but with a lot of character.
+   » onda = vibe
+742. Tiene una vista espectacular desde la terraza.
+   It has a spectacular view from the terrace.
+743. Queda medio escondido, si no sabés no lo encontrás.
+   It's a bit hidden, if you don't know about it you won't find it.
+744. Es un barrio tranquilo, se vive muy bien.
+   It's a quiet neighbourhood, it's a great place to live.
+745. Está bastante venido abajo, pero tiene su encanto.
+   It's pretty run down, but it has its charm.
+746. De noche se pone lindísimo con las luces.
+   At night it gets really beautiful with the lights.
+   » ponerse = to become
+747. Es un clásico de la ciudad, está desde siempre.
+   It's a city classic, it's been there forever.
+748. Hay un ruido tremendo, no se puede charlar.
+   There's a terrible racket, you can't talk.
+749. Está siempre lleno, conviene ir temprano.
+   It's always packed, it's best to go early.
+750. Me pareció un poco sobrevalorado, la verdad.
+   I thought it was a bit overrated, honestly.
+751. Tiene mucha historia atrás, deberías leer sobre eso.
+   It has a lot of history behind it, you should read about it.
+752. Es el típico lugar al que va la gente del barrio.
+   It's the typical place where locals go.
+753. No tiene nada de especial pero se come bárbaro.
+   It's nothing special but the food is great.
+754. Es enorme, calculá dos horas para recorrerlo.
+   It's huge, reckon on two hours to go round it.
+   » calculá = reckon on
+755. Vale la pena aunque sea pasar y verlo de afuera.
+   It's worth at least passing by and seeing it from outside.
+756. Está justo al lado de la estación, no tiene pérdida.
+   It's right next to the station, you can't miss it.
+   » no tiene pérdida = impossible to miss
+757. Es más lindo en persona que en las fotos.
+   It's nicer in person than in the photos.
+758. Lo renovaron hace poco y quedó impecable.
+   They renovated it recently and it turned out immaculate.
+759. Es medio caro para lo que es.
+   It's a bit pricey for what it is.
+760. Terminó siendo lo mejor del viaje.
+   It ended up being the best part of the trip.
+
+── Gustos y preferencias ─────────────────────────────────────
+
+761. Me encanta, es justo lo que estaba buscando.
+   I love it, it's exactly what I was looking for.
+762. No es muy mi estilo, pero entiendo que guste.
+   It's not really my style, but I get why people like it.
+763. Prefiero mil veces lo otro.
+   I'd take the other one a thousand times over.
+764. Me da lo mismo, elegí vos.
+   I don't mind either way, you choose.
+765. No soy mucho de salir de noche.
+   I'm not much of a night-out person.
+   » ser mucho de = to be really into
+766. Me gusta más tranquilo, con poca gente.
+   I prefer it quieter, with few people.
+767. Me copa todo lo que tenga que ver con deporte.
+   I'm into anything to do with sport.
+   » copar = to be into
+768. Nunca fui fanático de eso, la verdad.
+   I was never a fan of that, honestly.
+769. Me engancha mucho ese tipo de historias.
+   That kind of story really hooks me.
+   » enganchar = to hook
+770. Si tengo que elegir, me quedo con el primero.
+   If I have to choose, I'll take the first one.
+771. Todo lo que sea comida picante me va bien.
+   Anything spicy works for me.
+772. No me termina de gustar, no sé bien por qué.
+   I don't quite like it, I'm not sure why.
+773. Es de mis cosas favoritas del mundo.
+   It's one of my favourite things in the world.
+774. Le tengo cariño por todo lo que significa.
+   I'm fond of it for everything it means.
+775. Antes no me gustaba y ahora no puedo parar.
+   I didn't like it before and now I can't stop.
+776. Lo probé una vez y quedé enganchado.
+   I tried it once and got hooked.
+777. Depende mucho del día y de cómo me levante.
+   It depends a lot on the day and how I wake up.
+778. Me gusta, pero no todos los días.
+   I like it, but not every day.
+779. Cada vez me gusta más.
+   I like it more and more.
+780. Es un gusto adquirido, al principio no entendía nada.
+   It's an acquired taste, at first I didn't get it.
+
+── Dudas, suposiciones y rumores ─────────────────────────────
+
+781. Me parece que sí, pero no te lo puedo asegurar.
+   I think so, but I can't guarantee it.
+782. Tengo entendido que abre a las nueve.
+   My understanding is it opens at nine.
+   » tengo entendido = I gather
+783. Habría que confirmarlo, no vaya a ser que cambien.
+   We should confirm it, in case they change it.
+   » no vaya a ser que = lest, just in case
+784. Se dice que va a subir todo el mes que viene.
+   They say everything's going up next month.
+785. Escuché por ahí que lo iban a cerrar.
+   I heard around that they were going to close it.
+786. No tengo la menor idea, averiguo y te digo.
+   I have no idea at all, I'll find out and tell you.
+787. Debe estar por llegar, salió hace rato.
+   He must be about to arrive, he left a while ago.
+   » deber + infinitive = must (supposition)
+788. Seguro se quedó dormido otra vez.
+   He surely overslept again.
+789. Capaz que ni se enteró.
+   Maybe he didn't even find out.
+   » capaz que = maybe
+790. Yo pensé que era al revés.
+   I thought it was the other way round.
+791. No estoy seguro, pero creo que era por acá.
+   I'm not sure, but I think it was around here.
+792. Si no me equivoco, ya nos conocíamos.
+   If I'm not mistaken, we'd already met.
+793. Puede ser que me haya confundido.
+   It's possible I got confused.
+794. Por lo que me contaron, estuvo buenísimo.
+   From what they told me, it was great.
+795. Dicen que es el mejor, pero nunca fui.
+   They say it's the best, but I've never been.
+796. A mí nadie me avisó nada.
+   Nobody told me anything.
+797. Vaya uno a saber qué pasó realmente.
+   Who knows what really happened.
+798. Lo doy por hecho, pero mejor chequealo.
+   I'm taking it as given, but better check it.
+799. Hasta donde yo sé, sigue igual.
+   As far as I know, it's still the same.
+800. Prefiero no asegurar nada hasta estar seguro.
+   I'd rather not promise anything until I'm sure.
+
+── Recomendar y advertir ─────────────────────────────────────
+
+801. Te recomiendo que vayas temprano, después se llena.
+   I recommend you go early, it fills up later.
+802. Si vas, no dejes de probar el asado.
+   If you go, don't miss trying the asado.
+   » no dejes de = make sure you
+803. Ojo con los taxis que no tienen reloj.
+   Watch out for taxis without a meter.
+   » ojo con = watch out for
+804. Tené cuidado con el celular en esa zona.
+   Be careful with your phone in that area.
+805. Mejor sacá entradas antes, se agotan rápido.
+   Better get tickets in advance, they sell out fast.
+806. Yo que vos reservaría con tiempo.
+   If I were you I'd book well ahead.
+807. No te hagas problema, es más seguro de lo que dicen.
+   Don't worry, it's safer than they say.
+808. Evitá esa calle de noche, dale la vuelta.
+   Avoid that street at night, go around.
+809. Si te ofrecen cambiar plata en la calle, ni ahí.
+   If they offer to change money on the street, absolutely not.
+810. Vale la pena hacer el esfuerzo de ir.
+   It's worth making the effort to go.
+811. Andá con tiempo porque el tránsito es imprevisible.
+   Go with time to spare because traffic is unpredictable.
+812. Te va a encantar, estoy seguro.
+   You're going to love it, I'm sure.
+813. No te lo pierdas si estás por la zona.
+   Don't miss it if you're in the area.
+814. Preguntá antes de pagar, así no hay sorpresas.
+   Ask before paying, so there are no surprises.
+815. Llevá efectivo porque no todos toman tarjeta.
+   Take cash because not everyone takes card.
+816. Confiá en mí, vale cada peso.
+   Trust me, it's worth every peso.
+817. Es mejor que vayas acompañado la primera vez.
+   It's better you go with someone the first time.
+818. Fijate bien los horarios porque cambian seguido.
+   Check the opening times carefully because they change often.
+819. Si podés, quedate a ver el atardecer.
+   If you can, stay for the sunset.
+820. Hacelo, después me contás.
+   Do it, tell me about it afterwards.
+
+── Disculpas y agradecimiento ────────────────────────────────
+
+821. Perdoname, se me pasó por completo.
+   I'm sorry, it completely slipped my mind.
+   » pasársele a uno = to slip your mind
+822. Mil disculpas por la demora en contestarte.
+   A thousand apologies for the delay in replying.
+823. Fue sin querer, de verdad no me di cuenta.
+   It was unintentional, I really didn't realise.
+824. Te pido disculpas si te incomodé con algo.
+   I apologise if I made you uncomfortable with anything.
+825. Me siento mal por cómo quedó la cosa.
+   I feel bad about how things ended up.
+826. Te lo compenso la próxima, prometido.
+   I'll make it up to you next time, promise.
+827. No tenés por qué pedir perdón, está todo bien.
+   You don't have to apologise, it's all fine.
+828. Quedate tranquilo, le puede pasar a cualquiera.
+   Don't worry, it can happen to anyone.
+829. Gracias de verdad, me salvaste el día.
+   Thanks genuinely, you saved my day.
+830. No sabés lo que me ayudaste con eso.
+   You've no idea how much you helped me with that.
+831. Te agradezco la buena onda de siempre.
+   I appreciate your good vibes as always.
+   » buena onda = good vibes
+832. Te debo una grande.
+   I owe you a big one.
+833. Gracias por bancarme todo este tiempo.
+   Thanks for putting up with me all this time.
+834. No era necesario, pero te lo agradezco un montón.
+   It wasn't necessary, but I really appreciate it.
+835. En serio, gracias por hacerte el tiempo.
+   Seriously, thanks for making the time.
+836. Fue un gesto enorme de tu parte.
+   It was a huge gesture on your part.
+837. No tengo cómo agradecerte.
+   I can't thank you enough.
+838. Cualquier cosa que necesites, acá estoy.
+   Anything you need, I'm here.
+839. De nada, fue un placer ayudarte.
+   You're welcome, it was a pleasure to help.
+840. Gracias a vos por confiar en mí.
+   Thank you for trusting me.
+
+── Humor, ironía y chicanas ──────────────────────────────────
+
+841. Sí, claro, y yo soy Messi.
+   Yeah right, and I'm Messi.
+842. Qué bueno que avisaste con tanto tiempo.
+   How nice of you to give me so much notice.
+   » sarcastic
+843. No, si vos siempre tan puntual.
+   Oh sure, you're always so punctual.
+844. Me estás cargando, ¿no?
+   You're pulling my leg, right?
+   » cargar = to tease
+845. Dale, no me jodas.
+   Come on, you're kidding me.
+   » mildly vulgar
+846. Me reí como no me reía hace rato.
+   I laughed like I hadn't laughed in a while.
+847. Es un fenómeno, siempre tiene una salida.
+   He's a riot, he's always got a comeback.
+848. Nos matamos de risa toda la noche.
+   We laughed our heads off all night.
+849. Te la mandaste bien esta vez.
+   You really did it this time.
+   » mandársela = to mess up spectacularly
+850. Qué papelón que hice.
+   What a fool I made of myself.
+   » papelón = embarrassing scene
+851. Nos cargamos entre nosotros todo el tiempo.
+   We tease each other all the time.
+852. Lo dije en chiste, no te lo tomes mal.
+   I said it as a joke, don't take it badly.
+853. Tenés un humor muy particular, me gusta.
+   You've got a very particular sense of humour, I like it.
+854. Me hace reír hasta cuando estoy de mal humor.
+   He makes me laugh even when I'm in a bad mood.
+855. Es para reírse, no queda otra.
+   You've got to laugh, there's no other option.
+856. Encima se reía él.
+   And on top of it he was the one laughing.
+857. Qué cara que pusiste.
+   What a face you made.
+858. No te hagas el vivo.
+   Don't try to be clever.
+   » hacerse el vivo = to act like a smart aleck
+859. Me agarró desprevenido y me largué a reír.
+   It caught me off guard and I burst out laughing.
+860. Con vos nunca sé si hablás en serio.
+   With you I never know if you're being serious.
+
+── Discutir y poner límites ──────────────────────────────────
+
+861. Prefiero que lo hablemos con calma en otro momento.
+   I'd rather we talk about it calmly another time.
+862. No me parece bien cómo se manejó la situación.
+   I don't think the situation was handled well.
+863. Dejame terminar y después me decís lo que pienses.
+   Let me finish and then you tell me what you think.
+864. No estoy enojado, simplemente no estoy de acuerdo.
+   I'm not angry, I just don't agree.
+865. Me parece que estamos hablando de cosas distintas.
+   I think we're talking about different things.
+866. Eso que decís no es así, o por lo menos no siempre.
+   What you're saying isn't right, or at least not always.
+867. Entiendo que estés molesto, pero bajemos un poco.
+   I get that you're annoyed, but let's tone it down.
+868. No me gusta que me hablen de esa manera.
+   I don't like being spoken to that way.
+869. Hasta acá llego yo, el resto no me corresponde.
+   This is as far as I go, the rest isn't my responsibility.
+870. Lo siento, pero esta vez te voy a decir que no.
+   I'm sorry, but this time I'm going to say no.
+871. Necesito que respetes mis tiempos.
+   I need you to respect my timeline.
+872. No voy a discutir por algo así.
+   I'm not going to argue over something like that.
+873. Dejemos el tema acá antes de que se complique.
+   Let's drop the subject before it gets complicated.
+874. Prefiero ser claro ahora y no generar expectativas.
+   I'd rather be clear now and not create expectations.
+875. Vamos a tener que ponernos de acuerdo en algún punto.
+   We're going to have to agree at some point.
+876. No es personal, es una cuestión práctica.
+   It's not personal, it's a practical matter.
+877. Te lo digo de buena manera, pero te lo digo.
+   I'm telling you nicely, but I am telling you.
+878. Ya está, no vale la pena seguir.
+   It's done, it's not worth going on.
+879. Lo importante es que quedemos bien.
+   What matters is that we're on good terms.
+880. Hablémoslo cara a cara, por mensaje no se entiende.
+   Let's talk face to face, by message it gets misread.
+
+── Rutinas y hábitos ─────────────────────────────────────────
+
+881. Todos los días hago más o menos lo mismo.
+   Every day I do more or less the same thing.
+882. Suelo levantarme a las siete, salvo los domingos.
+   I usually get up at seven, except Sundays.
+   » salvo = except
+883. Me cuesta mucho arrancar sin café.
+   I really struggle to get going without coffee.
+884. Trato de caminar un rato todos los días.
+   I try to walk for a while every day.
+885. Una vez por semana me junto con amigos.
+   Once a week I meet up with friends.
+886. Siempre dejo lo más difícil para el final.
+   I always leave the hardest thing for last.
+887. Me acostumbré a trabajar de noche.
+   I got used to working at night.
+888. Estoy tratando de cambiar algunos hábitos.
+   I'm trying to change some habits.
+889. Cada tanto me tomo un día entero libre.
+   Every so often I take a whole day off.
+   » cada tanto = every now and then
+890. Los fines de semana no pongo el despertador.
+   At weekends I don't set an alarm.
+891. Después de almorzar me agarra un sueño tremendo.
+   After lunch I get terribly sleepy.
+892. Me hace bien tener una rutina más o menos fija.
+   Having a fairly fixed routine does me good.
+893. Nunca llego a hacer todo lo que me propongo.
+   I never manage to do everything I set out to.
+894. De a poco lo fui incorporando sin darme cuenta.
+   Little by little I took it on without realising.
+895. Los lunes siempre me cuestan más.
+   Mondays are always harder for me.
+896. Antes salía más, ahora prefiero quedarme en casa.
+   I used to go out more, now I prefer staying home.
+897. Aprovecho el viaje para escuchar algo.
+   I use the commute to listen to something.
+898. Me organizo mejor cuando escribo todo.
+   I organise myself better when I write everything down.
+899. Una vez que agarrás el ritmo, se hace fácil.
+   Once you get the rhythm, it becomes easy.
+900. Es cuestión de costumbre, nada más.
+   It's just a matter of habit, nothing more.
+
+── Entrevistas y preguntas ───────────────────────────────────
+
+901. Contame un poco cómo empezó todo esto.
+   Tell me a bit about how all this started.
+902. ¿Qué fue lo que te llevó por ese camino?
+   What was it that led you down that path?
+903. ¿Cómo viviste ese momento vos?
+   How did you experience that moment?
+904. ¿Qué es lo que más te sorprendió de todo?
+   What surprised you most of everything?
+905. ¿Te arrepentís de algo de lo que hiciste?
+   Do you regret anything you did?
+906. ¿Cuál fue el momento más difícil?
+   What was the hardest moment?
+907. Dame un ejemplo de eso, si podés.
+   Give me an example of that, if you can.
+908. ¿Eso te cambió la forma de ver las cosas?
+   Did that change the way you see things?
+909. ¿Qué le dirías a alguien que está empezando?
+   What would you say to someone just starting out?
+910. ¿Hay algo que te hubiera gustado saber antes?
+   Is there anything you'd have liked to know earlier?
+911. ¿Cómo te imaginás esto dentro de cinco años?
+   How do you picture this in five years?
+912. ¿Qué parte de todo esto te sigue emocionando?
+   What part of all this still excites you?
+913. ¿Querés agregar algo que no te haya preguntado?
+   Would you like to add anything I haven't asked?
+914. ¿Dónde te puede encontrar la gente?
+   Where can people find you?
+915. Muchas gracias por tu tiempo, de verdad.
+   Thank you very much for your time, really.
+916. ¿Te sentiste cómodo con las preguntas?
+   Did you feel comfortable with the questions?
+917. Si querés que saque algo, decímelo tranquilo.
+   If you want me to cut something, just tell me.
+918. Me quedé pensando en algo que dijiste al principio.
+   I've been thinking about something you said at the start.
+919. Volvamos un segundo a ese punto.
+   Let's go back for a second to that point.
+920. Para cerrar, una última cosa.
+   To wrap up, one last thing.
+
+── Redes, contenido y medios ─────────────────────────────────
+
+921. Subí un episodio nuevo esta semana.
+   I uploaded a new episode this week.
+922. Lo estoy difundiendo por todos lados.
+   I'm spreading it everywhere.
+923. ¿Lo podrías compartir si te gustó?
+   Could you share it if you liked it?
+924. Tuvo bastante más alcance de lo que esperaba.
+   It got quite a bit more reach than I expected.
+925. Estoy probando formatos nuevos a ver qué funciona.
+   I'm trying new formats to see what works.
+926. Me escribió gente que ni conozco, está buenísimo.
+   People I don't even know wrote to me, it's great.
+927. Lo importante es la constancia, no el número.
+   What matters is consistency, not the numbers.
+928. Corté un fragmento corto para redes.
+   I cut a short clip for social media.
+929. ¿Te molesta si uso una parte para promocionarlo?
+   Do you mind if I use a part to promote it?
+930. Estoy armando el contenido para la semana que viene.
+   I'm putting together the content for next week.
+931. Publico los lunes, así la gente ya sabe.
+   I publish on Mondays, so people know.
+932. Me interesa más la calidad que la cantidad.
+   I care more about quality than quantity.
+933. Tengo un newsletter donde escribo más largo.
+   I have a newsletter where I write longer pieces.
+934. Estoy escribiendo una nota sobre el tema.
+   I'm writing an article about the topic.
+   » nota = article, in RP journalism
+935. Mandé la nota y quedó a la espera de respuesta.
+   I submitted the piece and it's awaiting a reply.
+936. Me gustaría publicarlo en algún medio de acá.
+   I'd like to publish it in a local outlet.
+937. Hago todo solo, desde grabar hasta editar.
+   I do everything alone, from recording to editing.
+938. Al principio nadie escuchaba, pero seguí igual.
+   At first nobody listened, but I kept going anyway.
+939. Lo hago porque me gusta, no por los números.
+   I do it because I enjoy it, not for the numbers.
+940. Si te interesa, te paso el link.
+   If you're interested, I'll send you the link.
+
+── Deporte y entrenar ────────────────────────────────────────
+
+941. Entreno tres veces por semana, más o menos.
+   I train three times a week, more or less.
+942. Salgo a correr temprano antes de que haga calor.
+   I go out running early before it gets hot.
+943. Hace mucho que no juego, estoy oxidado.
+   I haven't played in ages, I'm rusty.
+   » oxidado = rusty
+944. ¿Armamos un partido el sábado?
+   Shall we put together a game on Saturday?
+   » armar un partido = to get a game together
+945. Me quedé sin aire a los diez minutos.
+   I was out of breath after ten minutes.
+946. Hoy no doy más, dejo acá.
+   I can't go on today, I'll stop here.
+   » no dar más = to be done in
+947. Al día siguiente no me podía mover del dolor.
+   The next day I couldn't move from the soreness.
+948. Estoy tratando de volver a entrenar de a poco.
+   I'm trying to get back into training gradually.
+949. Me lesioné y tuve que parar dos meses.
+   I got injured and had to stop for two months.
+950. ¿Vas a ver el partido? Podemos ir juntos.
+   Are you going to watch the match? We can go together.
+951. Fuimos a la cancha y la pasamos increíble.
+   We went to the stadium and had an incredible time.
+952. Ganamos sobre la hora, fue una locura.
+   We won in the dying minutes, it was crazy.
+953. Perdimos pero jugamos bien, eso es lo que vale.
+   We lost but we played well, that's what counts.
+954. Lo que más me gusta es el ambiente, más que el juego.
+   What I like most is the atmosphere, more than the game.
+955. Acá el deporte es parte de la identidad.
+   Here sport is part of the identity.
+956. Jugué toda la vida, desde chiquito.
+   I played all my life, since I was little.
+957. El equipo viene jugando muy bien últimamente.
+   The team's been playing really well lately.
+958. Me hace bien entrenar, me despeja la cabeza.
+   Training is good for me, it clears my head.
+959. Después del partido nos quedamos charlando.
+   After the game we stayed chatting.
+960. Más que ganar, me importa divertirme.
+   More than winning, I care about having fun.
+
+── Tiempo y frecuencia ───────────────────────────────────────
+
+961. Cada tanto lo veo, pero no muy seguido.
+   I see him every now and then, but not very often.
+962. Hace como dos meses que no hablamos.
+   We haven't spoken in about two months.
+963. Lo hago siempre que puedo.
+   I do it whenever I can.
+964. De vez en cuando me doy un gusto.
+   Every once in a while I treat myself.
+   » darse un gusto = to treat yourself
+965. Nunca en la vida vi algo así.
+   I've never in my life seen anything like it.
+966. Ya casi no salgo durante la semana.
+   I hardly go out during the week anymore.
+967. Falta poco para que termine.
+   It's nearly finished.
+968. Enseguida estoy con vos.
+   I'll be with you in a moment.
+969. Tarde o temprano va a pasar.
+   Sooner or later it's going to happen.
+970. Al rato me llamó para avisarme.
+   A while later he called to let me know.
+   » al rato = a while later
+971. Recién ahora me doy cuenta.
+   Only now do I realise.
+972. Todavía falta un montón.
+   There's still loads left.
+973. Ya mismo lo hago.
+   I'll do it right now.
+974. De un momento a otro cambió todo.
+   From one moment to the next everything changed.
+975. Siempre y cuando avises antes, no hay problema.
+   As long as you give notice, there's no problem.
+976. Todos los días un poco, eso funciona.
+   A little every day, that works.
+977. La semana que viene estoy más tranquilo.
+   Next week I'm less busy.
+978. Pasó volando este mes.
+   This month flew by.
+979. Nos vemos en un rato.
+   See you in a bit.
+980. Por ahora está todo igual.
+   For now everything's the same.
+
+── Muletillas y conectores ───────────────────────────────────
+
+981. Y bueno, qué se le va a hacer.
+   Well, what can you do.
+982. Viste que siempre pasa lo mismo.
+   You know how it's always the same.
+   » viste = you know, constant RP filler
+983. O sea, no es que esté mal, pero tampoco.
+   I mean, it's not that it's bad, but still.
+984. Digamos que no fue la mejor idea.
+   Let's say it wasn't the best idea.
+985. De hecho, pensaba decírtelo hoy.
+   In fact, I was planning to tell you today.
+986. Igual, no es tan importante.
+   Anyway, it's not that important.
+   » igual = anyway, even so
+987. Después de todo, salió bien.
+   After all, it worked out.
+988. Encima llegó tarde.
+   On top of that he arrived late.
+989. Al final de cuentas, es lo mismo.
+   At the end of the day, it's the same.
+990. Por un lado sí, por el otro no tanto.
+   On one hand yes, on the other not so much.
+991. Nada, te quería contar eso nomás.
+   Anyway, I just wanted to tell you that.
+   » "nada" opens a wrap-up
+992. Qué sé yo, a mí me parece bien.
+   I dunno, seems fine to me.
+993. En realidad era más simple de lo que parecía.
+   Actually it was simpler than it seemed.
+994. Más que nada por una cuestión de tiempo.
+   Mainly it's a question of time.
+995. De última lo dejamos para otro día.
+   Worst case we leave it for another day.
+   » de última = if it comes to it
+996. Tipo, no sé, algo así.
+   Like, I dunno, something like that.
+   » tipo = like, filler
+997. Obviamente que sí.
+   Obviously yes.
+998. A ver, dejame pensar.
+   Let's see, let me think.
+999. Básicamente es eso.
+   Basically that's it.
+1000. Y nada, eso fue todo.
+   And well, that was all.
+`;
+
+        // Data Structure
+        let phrases = [];
+        let categories = [];
+        let filteredPhrases = [];
+
+        let currentIdx = 0;
+        let isPlaying = false;
+        let synth = window.speechSynthesis;
+        let voices = [];
+        let selectedVoice = null;
+
+        // Parse Data
+        function parseData() {
+            const lines = rawTextData.split('\n');
+            let currentCat = "General";
+            let currentPhraseObj = null;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                if (trimmed.startsWith('──')) {
+                    currentCat = trimmed.replace(/─/g, '').trim();
+                    if (!categories.includes(currentCat)) {
+                        categories.push(currentCat);
+                    }
+                } else if (/^\d+\./.test(trimmed)) {
+                    if (currentPhraseObj) {
+                        phrases.push(currentPhraseObj);
+                    }
+                    const numMatch = trimmed.match(/^(\d+)\.\s*(.*)/);
+                    currentPhraseObj = {
+                        id: numMatch ? parseInt(numMatch[1]) : phrases.length + 1,
+                        category: currentCat,
+                        es: numMatch ? numMatch[2] : trimmed,
+                        en: '',
+                        note: ''
+                    };
+                } else if (trimmed.startsWith('»')) {
+                    if (currentPhraseObj) {
+                        currentPhraseObj.note += (currentPhraseObj.note ? ' ' : '') + trimmed.substring(1).trim();
+                    }
+                } else {
+                    if (currentPhraseObj && !currentPhraseObj.en) {
+                        currentPhraseObj.en = trimmed;
+                    }
+                }
+            });
+            if (currentPhraseObj) {
+                phrases.push(currentPhraseObj);
+            }
+
+            filteredPhrases = [...phrases];
+        }
+
+        // Load TTS Voices
+        function loadVoices() {
+            voices = synth.getVoices();
+            const voiceSelect = document.getElementById('voiceSelect');
+            voiceSelect.innerHTML = '';
+
+            // Prioritize es-AR, es-CL, es-UY, or Spanish
+            const esVoices = voices.filter(v => v.lang.startsWith('es'));
+            let arVoice = voices.find(v => v.lang === 'es-AR') || 
+                          voices.find(v => v.lang === 'es-UY') ||
+                          voices.find(v => v.lang.includes('es'));
+
+            if (voices.length === 0) {
+                voiceSelect.innerHTML = '<option>找不到 TTS 語音 (瀏覽器不支援)</option>';
+                return;
+            }
+
+            voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                let isAR = voice.lang === 'es-AR' ? ' (🇦🇷 阿根廷口音)' : '';
+                option.textContent = `${voice.name} (${voice.lang})${isAR}`;
+                if (voice === arVoice) {
+                    option.selected = true;
+                    selectedVoice = voice;
+                }
+                voiceSelect.appendChild(option);
+            });
+
+            if (!selectedVoice && voices.length > 0) {
+                selectedVoice = voices[0];
+            }
+        }
+
+        // Render UI
+        function renderCategories() {
+            const catContainer = document.getElementById('categoryList');
+            catContainer.innerHTML = '';
+
+            // All Category
+            const allBtn = document.createElement('button');
+            allBtn.className = `w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex justify-between items-center bg-sky-50 text-sky-700 font-bold`;
+            allBtn.innerHTML = `<span>全部主題 (601-1000)</span> <span class="bg-sky-200 text-sky-800 px-1.5 py-0.5 rounded-full text-[10px]">${phrases.length}</span>`;
+            allBtn.onclick = () => filterCategory('ALL', allBtn);
+            catContainer.appendChild(allBtn);
+
+            categories.forEach(cat => {
+                const count = phrases.filter(p => p.category === cat).length;
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition flex justify-between items-center`;
+                btn.innerHTML = `<span>${cat}</span> <span class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-full text-[10px]">${count}</span>`;
+                btn.onclick = () => filterCategory(cat, btn);
+                catContainer.appendChild(btn);
+            });
+        }
+
+        function filterCategory(cat, btnElement) {
+            document.querySelectorAll('#categoryList button').forEach(b => {
+                b.className = `w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 transition flex justify-between items-center`;
+            });
+            btnElement.className = `w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition flex justify-between items-center bg-sky-50 text-sky-700 font-bold`;
+
+            if (cat === 'ALL') {
+                filteredPhrases = [...phrases];
+            } else {
+                filteredPhrases = phrases.filter(p => p.category === cat);
+            }
+            renderPhrases();
+        }
+
+        function renderPhrases() {
+            const list = document.getElementById('phraseList');
+            document.getElementById('countDisplay').textContent = filteredPhrases.length;
+            list.innerHTML = '';
+
+            filteredPhrases.forEach((p, idx) => {
+                const card = document.createElement('div');
+                const isSelected = filteredPhrases[currentIdx] && filteredPhrases[currentIdx].id === p.id;
+                card.className = `p-4 rounded-xl border border-slate-200 hover:border-sky-300 transition cursor-pointer bg-white relative ${isSelected ? 'active-phrase' : ''}`;
+                card.id = `phrase-card-${idx}`;
+                card.onclick = () => playPhraseAtIndex(idx);
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">#${p.id}</span>
+                                <span class="text-[10px] text-sky-600 font-medium">${p.category}</span>
+                            </div>
+                            <h3 class="text-base font-semibold text-slate-800 leading-snug">${p.es}</h3>
+                            <p class="text-sm text-slate-600 mt-1">${p.en}</p>
+                            ${p.note ? `<p class="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2 inline-block border border-amber-200/60"><i class="fas fa-lightbulb me-1"></i>${p.note}</p>` : ''}
+                        </div>
+                        <button class="p-2 text-sky-600 hover:bg-sky-50 rounded-full transition" title="朗讀">
+                            <i class="fas ${isSelected && isPlaying ? 'fa-volume-high text-sky-600 animate-pulse' : 'fa-volume-low text-slate-400'} text-lg"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updatePlayerUI() {
+            const current = filteredPhrases[currentIdx];
+            if (!current) return;
+
+            document.getElementById('currentCategory').textContent = `#${current.id} · ${current.category}`;
+            document.getElementById('currentEs').textContent = current.es;
+            document.getElementById('currentEn').textContent = current.en;
+
+            // Highlight Active Card
+            document.querySelectorAll('#phraseList > div').forEach((el, idx) => {
+                if (idx === currentIdx) {
+                    el.classList.add('active-phrase');
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    el.classList.remove('active-phrase');
+                }
+            });
+
+            // Update Play Icon
+            const playIcon = document.getElementById('playIcon');
+            if (isPlaying) {
+                playIcon.className = 'fas fa-pause text-lg';
+            } else {
+                playIcon.className = 'fas fa-play text-lg';
+            }
+        }
+
+        // Speech Logic
+        function playPhraseAtIndex(index) {
+            if (index < 0 || index >= filteredPhrases.length) return;
+            currentIdx = index;
+            isPlaying = true;
+            updatePlayerUI();
+
+            synth.cancel(); // Stop current speech
+
+            const phrase = filteredPhrases[currentIdx];
+            const rate = parseFloat(document.getElementById('rateInput').value);
+
+            // Spanish Utterance
+            const utterEs = new SpeechSynthesisUtterance(phrase.es);
+            utterEs.rate = rate;
+            if (selectedVoice) {
+                utterEs.voice = selectedVoice;
+            } else {
+                utterEs.lang = 'es-AR';
+            }
+
+            utterEs.onend = () => {
+                const readEn = document.getElementById('readEnToggle').checked;
+                if (readEn) {
+                    const utterEn = new SpeechSynthesisUtterance(phrase.en);
+                    utterEn.lang = 'en-US';
+                    utterEn.rate = rate;
+                    utterEn.onend = checkAutoPlayNext;
+                    synth.speak(utterEn);
+                } else {
+                    checkAutoPlayNext();
+                }
+            };
+
+            utterEs.onerror = () => {
+                isPlaying = false;
+                updatePlayerUI();
+            };
+
+            synth.speak(utterEs);
+        }
+
+        function checkAutoPlayNext() {
+            const autoPlay = document.getElementById('autoPlayToggle').checked;
+            if (autoPlay && isPlaying) {
+                if (currentIdx + 1 < filteredPhrases.length) {
+                    setTimeout(() => {
+                        playPhraseAtIndex(currentIdx + 1);
+                    }, 500);
+                } else {
+                    isPlaying = false;
+                    updatePlayerUI();
+                }
+            } else {
+                isPlaying = false;
+                updatePlayerUI();
+            }
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                synth.cancel();
+                isPlaying = false;
+                updatePlayerUI();
+            } else {
+                playPhraseAtIndex(currentIdx);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('playPauseBtn').onclick = togglePlayPause;
+        document.getElementById('prevBtn').onclick = () => {
+            if (currentIdx > 0) playPhraseAtIndex(currentIdx - 1);
+        };
+        document.getElementById('nextBtn').onclick = () => {
+            if (currentIdx + 1 < filteredPhrases.length) playPhraseAtIndex(currentIdx + 1);
+        };
+
+        document.getElementById('rateInput').oninput = (e) => {
+            document.getElementById('rateValue').textContent = `${e.target.value}x`;
+        };
+
+        document.getElementById('voiceSelect').onchange = (e) => {
+            selectedVoice = voices[e.target.value];
+        };
+
+        document.getElementById('searchInput').oninput = (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            filteredPhrases = phrases.filter(p => 
+                p.es.toLowerCase().includes(query) || 
+                p.en.toLowerCase().includes(query) || 
+                p.note.toLowerCase().includes(query)
+            );
+            currentIdx = 0;
+            renderPhrases();
+            updatePlayerUI();
+        };
+
+        // Initialize
+        window.onload = () => {
+            parseData();
+            renderCategories();
+            renderPhrases();
+
+            loadVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+
+            if (filteredPhrases.length > 0) {
+                updatePlayerUI();
+            }
+        };
+    </script>
+</body>
+</html>
